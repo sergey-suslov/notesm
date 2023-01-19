@@ -1,8 +1,10 @@
 package model
 
 import (
+	"github.com/charmbracelet/bubbles/key"
 	listComponent "github.com/charmbracelet/bubbles/list"
 	tea "github.com/charmbracelet/bubbletea"
+	"github.com/sergey-suslov/notesm/pkg/files"
 )
 
 type mode int
@@ -18,19 +20,39 @@ type TeaModel struct {
 	mode       mode
 	terminate  bool
 	windowSize tea.WindowSizeMsg
+
+	fr files.FilesRepo
 }
 
-func New() tea.Model {
-	items := make([]listComponent.Item, 2)
-	for i, proj := range []Note{{"Item 1"}, {"Item 2"}} {
-		items[i] = listComponent.Item(proj)
+func New(fr files.FilesRepo) tea.Model {
+	files, err := fr.GetFiles()
+	if err != nil {
+		panic(err)
+	}
+	items := make([]listComponent.Item, len(files))
+	for i, f := range files {
+		items[i] = listComponent.Item(Note{f.Name})
+	}
+
+	notesList := listComponent.New(items, listComponent.NewDefaultDelegate(), 20, 20)
+
+	notesList.Title = "projects"
+	notesList.AdditionalShortHelpKeys = func() []key.Binding {
+		return []key.Binding{
+			Keymap.Create,
+			Keymap.Rename,
+			Keymap.Delete,
+			Keymap.Back,
+		}
 	}
 
 	return TeaModel{
 		mode:       list,
 		terminate:  false,
-		notesList:  listComponent.New(items, listComponent.NewDefaultDelegate(), 20, 20),
+		notesList:  notesList,
 		windowSize: tea.WindowSizeMsg{},
+
+		fr: fr,
 	}
 }
 
