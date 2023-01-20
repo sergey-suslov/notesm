@@ -3,6 +3,7 @@ package files
 import (
 	"io/ioutil"
 	"os"
+	"path"
 )
 
 const DEFAULT_FILES_DIR = ".notesm"
@@ -19,10 +20,14 @@ func New(path string) FilesRepo {
 	return FilesRepo{path}
 }
 
+func (fr *FilesRepo) SaveNote(name, body string) error {
+	return os.WriteFile(path.Join(fr.path, name), []byte(body), 0644)
+}
+
 func (fr *FilesRepo) CreateDirIfNotExists() error {
 	_, err := ioutil.ReadDir(fr.path)
 	if err != nil {
-		err = os.Mkdir(fr.path, 0744)
+		err = os.Mkdir(fr.path, 0644)
 		if err != nil {
 			return err
 		}

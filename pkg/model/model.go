@@ -3,6 +3,7 @@ package model
 import (
 	"github.com/charmbracelet/bubbles/key"
 	listComponent "github.com/charmbracelet/bubbles/list"
+	"github.com/charmbracelet/bubbles/textinput"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/sergey-suslov/notesm/pkg/files"
 )
@@ -12,7 +13,8 @@ type mode int
 const (
 	list mode = iota
 	edit
-	create
+	createNoteName
+	createNoteBody
 )
 
 type TeaModel struct {
@@ -20,6 +22,9 @@ type TeaModel struct {
 	mode       mode
 	terminate  bool
 	windowSize tea.WindowSizeMsg
+
+	newNoteNameInut textinput.Model
+	newNoteName     string
 
 	fr files.FilesRepo
 }
@@ -46,11 +51,18 @@ func New(fr files.FilesRepo) tea.Model {
 		}
 	}
 
+	newNoteNameInut := textinput.New()
+	newNoteNameInut.Placeholder = "Note name"
+	newNoteNameInut.CharLimit = 120
+	newNoteNameInut.Width = 20
+
 	return TeaModel{
 		mode:       list,
 		terminate:  false,
 		notesList:  notesList,
 		windowSize: tea.WindowSizeMsg{},
+
+		newNoteNameInut: newNoteNameInut,
 
 		fr: fr,
 	}
@@ -69,9 +81,49 @@ func (m TeaModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case tea.WindowSizeMsg:
 		h, v := BodyStyle.GetFrameSize()
 		m.notesList.SetSize(msg.Width-h, msg.Height-v)
+	case abortNoteCreationMsg:
+		m.mode = list
+		m.newNoteNameInut.Blur()
+		m.newNoteNameInut.Reset()
+	case newNoteNameResultMsg:
+		m.newNoteName = string(msg)
+		m.newNoteNameInut.Blur()
+		m.newNoteNameInut.Reset()
+		cmds = append(cmds, newNoteOpenEditorCmd())
+	case updateNotesListMsg:
+		cmds = append(cmds, m.notesList.SetItems(m.getNotesAsItems()))
+	case newNoteBodyResultMsg:
+		err := m.createNote(m.newNoteName, string(msg))
+		if err != nil {
+			panic(err)
+		}
+		m.mode = list
+		cmds = append(cmds, updateNotesListCmd())
 	case tea.KeyMsg:
-		m.notesList, cmd = m.notesList.Update(msg)
-		cmds = append(cmds, cmd)
+		switch m.mode {
+		case createNoteName:
+			switch {
+			case key.Matches(msg, Keymap.Back):
+				cmds = append(cmds, abortNoteCreationCmd())
+			case key.Matches(msg, Keymap.Enter):
+				cmds = append(cmds, noteNameCreatedCmd(m.newNoteNameInut.Value()))
+			default:
+				m.newNoteNameInut, cmd = m.newNoteNameInut.Update(msg)
+			}
+		case list:
+			switch {
+			case key.Matches(msg, Keymap.Create):
+				m.mode = createNoteName
+				cmds = append(cmds, m.newNoteNameInut.Focus(), textinput.Blink)
+			default:
+				m.notesList, cmd = m.notesList.Update(msg)
+				cmds = append(cmds, cmd)
+			}
+		}
+		switch msg.Type {
+		case tea.KeyCtrlC:
+			return m, tea.Quit
+		}
 	}
 
 	return m, tea.Batch(cmds...)
@@ -85,5 +137,20 @@ func (m TeaModel) View() string {
 	if m.mode == list {
 		return BodyStyle.Render(m.notesList.View())
 	}
+	if m.mode == createNoteName {
+		return BodyStyle.Render(m.newNoteNameInut.View())
+	}
 	return ""
+}
+
+func (m *TeaModel) getNotesAsItems() []listComponent.Item {
+	files, err := m.fr.GetFiles()
+	if err != nil {
+		panic(err)
+	}
+	items := make([]listComponent.Item, len(files))
+	for i, f := range files {
+		items[i] = listComponent.Item(Note{f.Name})
+	}
+	return items
 }
