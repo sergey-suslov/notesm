@@ -4,7 +4,9 @@ import (
 	"github.com/charmbracelet/bubbles/key"
 	listComponent "github.com/charmbracelet/bubbles/list"
 	"github.com/charmbracelet/bubbles/textinput"
+	"github.com/charmbracelet/bubbles/viewport"
 	tea "github.com/charmbracelet/bubbletea"
+	"github.com/charmbracelet/lipgloss"
 	"github.com/sergey-suslov/notesm/pkg/files"
 )
 
@@ -13,6 +15,7 @@ type mode int
 const (
 	list mode = iota
 	edit
+	detail
 	createNoteName
 	createNoteBody
 )
@@ -25,6 +28,8 @@ type TeaModel struct {
 
 	newNoteNameInut textinput.Model
 	newNoteName     string
+
+	detail viewport.Model
 
 	fr files.FilesRepo
 }
@@ -56,6 +61,9 @@ func New(fr files.FilesRepo) tea.Model {
 	newNoteNameInut.CharLimit = 120
 	newNoteNameInut.Width = 20
 
+	detail := viewport.New(1, 1)
+	detail.YPosition = 0
+
 	return TeaModel{
 		mode:       list,
 		terminate:  false,
@@ -63,6 +71,8 @@ func New(fr files.FilesRepo) tea.Model {
 		windowSize: tea.WindowSizeMsg{},
 
 		newNoteNameInut: newNoteNameInut,
+
+		detail: detail,
 
 		fr: fr,
 	}
@@ -81,6 +91,10 @@ func (m TeaModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case tea.WindowSizeMsg:
 		h, v := BodyStyle.GetFrameSize()
 		m.notesList.SetSize(msg.Width-h, msg.Height-v)
+
+		m.detail.Width = msg.Width - h
+		m.detail.Height = msg.Height - v - lipgloss.Height(TitleStyle.Render("")) - 1
+
 	case abortNoteCreationMsg:
 		m.mode = list
 		m.newNoteNameInut.Blur()
@@ -101,6 +115,13 @@ func (m TeaModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		cmds = append(cmds, updateNotesListCmd())
 	case tea.KeyMsg:
 		switch m.mode {
+		case detail:
+			switch {
+			case key.Matches(msg, Keymap.Back):
+				m.mode = list
+			default:
+				m.detail, cmd = m.detail.Update(msg)
+			}
 		case createNoteName:
 			switch {
 			case key.Matches(msg, Keymap.Back):
@@ -112,6 +133,15 @@ func (m TeaModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			}
 		case list:
 			switch {
+			case key.Matches(msg, Keymap.Enter):
+				m.mode = detail
+				selected := m.notesList.SelectedItem()
+				content := m.fr.ReadNote(selected.FilterValue())
+				m.detail.SetContent(content)
+			case key.Matches(msg, Keymap.Delete):
+				selected := m.notesList.SelectedItem()
+				m.fr.DeleteNote(selected.FilterValue())
+				cmds = append(cmds, updateNotesListCmd())
 			case key.Matches(msg, Keymap.Create):
 				m.mode = createNoteName
 				cmds = append(cmds, m.newNoteNameInut.Focus(), textinput.Blink)
@@ -139,6 +169,10 @@ func (m TeaModel) View() string {
 	}
 	if m.mode == createNoteName {
 		return BodyStyle.Render(m.newNoteNameInut.View())
+	}
+	if m.mode == detail {
+		formatted := lipgloss.JoinVertical(lipgloss.Left, TitleStyle.Render("Detail"), "\n", m.detail.View())
+		return BodyStyle.Render(formatted)
 	}
 	return ""
 }

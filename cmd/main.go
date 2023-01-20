@@ -16,7 +16,7 @@ func main() {
 	filesRepo := files.New(filesRepoPath)
 	filesRepo.CreateDirIfNotExists()
 
-	p := tea.NewProgram(model.New(filesRepo), tea.WithAltScreen())
+	p := tea.NewProgram(model.New(filesRepo), tea.WithAltScreen(), tea.WithMouseCellMotion())
 	if err := p.Start(); err != nil {
 		fmt.Println("Error running program:", err)
 		os.Exit(1)

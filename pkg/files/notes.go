@@ -24,6 +24,21 @@ func (fr *FilesRepo) SaveNote(name, body string) error {
 	return os.WriteFile(path.Join(fr.path, name), []byte(body), 0644)
 }
 
+func (fr *FilesRepo) ReadNote(name string) string {
+	content, err := ioutil.ReadFile(path.Join(fr.path, name))
+	if err != nil {
+		panic(err)
+	}
+	return string(content)
+}
+
+func (fr *FilesRepo) DeleteNote(name string) {
+	err := os.Remove(path.Join(fr.path, name))
+	if err != nil {
+		panic(err)
+	}
+}
+
 func (fr *FilesRepo) CreateDirIfNotExists() error {
 	_, err := ioutil.ReadDir(fr.path)
 	if err != nil {

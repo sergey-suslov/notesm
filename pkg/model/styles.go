@@ -6,6 +6,10 @@ import (
 )
 
 var BodyStyle = lipgloss.NewStyle().Margin(1, 2)
+var TitleStyle = func() lipgloss.Style {
+	b := lipgloss.RoundedBorder()
+	return lipgloss.NewStyle().BorderStyle(b).Padding(0, 1)
+}()
 
 type keymap struct {
 	Create key.Binding
