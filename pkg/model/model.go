@@ -54,7 +54,7 @@ func New(fr files.FilesRepo) tea.Model {
 
 	notesList := listComponent.New(items, listComponent.NewDefaultDelegate(), 20, 20)
 
-	notesList.Title = "projects"
+	notesList.Title = "Notes"
 	notesList.AdditionalShortHelpKeys = func() []key.Binding {
 		return []key.Binding{
 			Keymap.Create,
