@@ -17,13 +17,14 @@ var NoteContentStyle = func(width int) lipgloss.Style {
 }
 
 type keymap struct {
-	Create key.Binding
-	Enter  key.Binding
-	Rename key.Binding
-	Edit   key.Binding
-	Delete key.Binding
-	Back   key.Binding
-	Quit   key.Binding
+	Create    key.Binding
+	Enter     key.Binding
+	Rename    key.Binding
+	Edit      key.Binding
+	Delete    key.Binding
+	Back      key.Binding
+	BackWithQ key.Binding
+	Quit      key.Binding
 }
 
 var Keymap = keymap{
@@ -50,6 +51,10 @@ var Keymap = keymap{
 	Back: key.NewBinding(
 		key.WithKeys("esc"),
 		key.WithHelp("esc", "back"),
+	),
+	BackWithQ: key.NewBinding(
+		key.WithKeys("esc", "q"),
+		key.WithHelp("esc/q", "back"),
 	),
 	Quit: key.NewBinding(
 		key.WithKeys("ctrl+c", "q"),

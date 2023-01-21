@@ -49,7 +49,7 @@ func New(fr files.FilesRepo) tea.Model {
 	}
 	items := make([]listComponent.Item, len(files))
 	for i, f := range files {
-		items[i] = listComponent.Item(Note{f.Name})
+		items[i] = listComponent.Item(Note{f.Name, f.ModTime})
 	}
 
 	notesList := listComponent.New(items, listComponent.NewDefaultDelegate(), 20, 20)
@@ -131,7 +131,7 @@ func (m TeaModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		switch m.mode {
 		case detail:
 			switch {
-			case key.Matches(msg, Keymap.Back):
+			case key.Matches(msg, Keymap.BackWithQ):
 				m.mode = list
 			default:
 				m.detail, cmd = m.detail.Update(msg)
@@ -235,7 +235,7 @@ func (m *TeaModel) getNotesAsItems() []listComponent.Item {
 	}
 	items := make([]listComponent.Item, len(files))
 	for i, f := range files {
-		items[i] = listComponent.Item(Note{f.Name})
+		items[i] = listComponent.Item(Note{f.Name, f.ModTime})
 	}
 	return items
 }

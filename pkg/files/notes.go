@@ -4,12 +4,14 @@ import (
 	"io/ioutil"
 	"os"
 	"path"
+	"time"
 )
 
 const DEFAULT_FILES_DIR = ".notesm"
 
 type File struct {
-	Name string
+	Name    string
+	ModTime time.Time
 }
 
 type FilesRepo struct {
@@ -58,7 +60,7 @@ func (fr *FilesRepo) GetFiles() ([]File, error) {
 	files := make([]File, 0)
 	for _, v := range entries {
 		if !v.IsDir() && v.Name() != "" {
-			files = append(files, File{v.Name()})
+			files = append(files, File{Name: v.Name(), ModTime: v.ModTime()})
 		}
 	}
 	return files, nil
