@@ -20,6 +20,7 @@ type keymap struct {
 	Create key.Binding
 	Enter  key.Binding
 	Rename key.Binding
+	Edit   key.Binding
 	Delete key.Binding
 	Back   key.Binding
 	Quit   key.Binding
@@ -33,6 +34,10 @@ var Keymap = keymap{
 	Enter: key.NewBinding(
 		key.WithKeys("enter"),
 		key.WithHelp("enter", "select"),
+	),
+	Edit: key.NewBinding(
+		key.WithKeys("e"),
+		key.WithHelp("e", "edit"),
 	),
 	Rename: key.NewBinding(
 		key.WithKeys("r"),

@@ -21,6 +21,7 @@ const (
 	detail
 	createNoteName
 	createNoteBody
+	editNoteBody
 )
 
 type TeaModel struct {
@@ -114,6 +115,9 @@ func (m TeaModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		cmds = append(cmds, newNoteOpenEditorCmd())
 	case updateNotesListMsg:
 		cmds = append(cmds, m.notesList.SetItems(m.getNotesAsItems()))
+	case editNoteBodyResultMsg:
+		m.mode = list
+		m.fr.SaveNote(msg.name, msg.content)
 	case newNoteBodyResultMsg:
 		err := m.createNote(m.newNoteName, string(msg))
 		if err != nil {
@@ -152,6 +156,11 @@ func (m TeaModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				selected := m.notesList.SelectedItem()
 				m.fr.DeleteNote(selected.FilterValue())
 				cmds = append(cmds, updateNotesListCmd())
+			case key.Matches(msg, Keymap.Edit):
+				m.mode = editNoteBody
+				selected := m.notesList.SelectedItem()
+				noteName := selected.FilterValue()
+				cmds = append(cmds, editNoteOpenEditorCmd(noteName, m.fr.ReadNote(noteName)))
 			case key.Matches(msg, Keymap.Create):
 				m.mode = createNoteName
 				cmds = append(cmds, m.newNoteNameInut.Focus(), textinput.Blink)
