@@ -13,7 +13,7 @@ var TitleStyle = func() lipgloss.Style {
 
 var NoteContentStyle = func(width int) lipgloss.Style {
 	b := lipgloss.NormalBorder()
-	return lipgloss.NewStyle().Width(width).BorderStyle(b).Padding(0, 1)
+	return lipgloss.NewStyle().Width(width).BorderStyle(b).Padding(0, 0)
 }
 
 type keymap struct {

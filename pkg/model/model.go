@@ -9,8 +9,10 @@ import (
 	"github.com/charmbracelet/bubbles/textinput"
 	"github.com/charmbracelet/bubbles/viewport"
 	tea "github.com/charmbracelet/bubbletea"
+	"github.com/charmbracelet/glamour"
 	"github.com/charmbracelet/lipgloss"
 	"github.com/sergey-suslov/notesm/pkg/files"
+	"github.com/sergey-suslov/notesm/pkg/util"
 )
 
 type mode int
@@ -67,7 +69,7 @@ func New(fr files.FilesRepo) tea.Model {
 	newNoteNameInut.CharLimit = 120
 	newNoteNameInut.Width = 20
 
-	detail := viewport.New(1, 1)
+	detail := viewport.New(10, 10)
 	detail.YPosition = 0
 	detail.MouseWheelEnabled = true
 
@@ -147,11 +149,8 @@ func (m TeaModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case list:
 			switch {
 			case key.Matches(msg, Keymap.Enter):
+				m.setDetailContent()
 				m.mode = detail
-				selected := m.notesList.SelectedItem()
-				m.detailNoteName = selected.FilterValue()
-				content := m.fr.ReadNote(selected.FilterValue())
-				m.detail.SetContent(content)
 			case key.Matches(msg, Keymap.Delete):
 				selected := m.notesList.SelectedItem()
 				m.fr.DeleteNote(selected.FilterValue())
@@ -206,8 +205,26 @@ func (m TeaModel) noteHeaderView() string {
 	return lipgloss.JoinHorizontal(lipgloss.Center, title)
 }
 
+func (m *TeaModel) setDetailContent() {
+	selected := m.notesList.SelectedItem()
+	noteName := selected.FilterValue()
+	m.detailNoteName = noteName
+	content := m.fr.ReadNote(noteName)
+	_, v := m.defaultBodyMargin()
+
+	width := util.Max(0, util.Min(int(180), m.detail.Width-v*2))
+	r, _ := glamour.NewTermRenderer(
+		glamour.WithAutoStyle(),
+		glamour.WithWordWrap(width),
+	)
+	content, _ = r.Render(content)
+
+	m.detail.SetContent(content)
+}
+
 func (m TeaModel) noteContentView() string {
 	_, v := m.defaultBodyMargin()
+
 	return NoteContentStyle(m.detail.Width - v*2).Render(m.detail.View())
 }
 
