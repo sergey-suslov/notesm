@@ -1,6 +1,9 @@
 package model
 
 import (
+	"fmt"
+
+	"github.com/charmbracelet/bubbles/help"
 	"github.com/charmbracelet/bubbles/key"
 	listComponent "github.com/charmbracelet/bubbles/list"
 	"github.com/charmbracelet/bubbles/textinput"
@@ -29,7 +32,9 @@ type TeaModel struct {
 	newNoteNameInut textinput.Model
 	newNoteName     string
 
-	detail viewport.Model
+	detail         viewport.Model
+	detailNoteName string
+	detailHelp     help.Model
 
 	fr files.FilesRepo
 }
@@ -63,6 +68,7 @@ func New(fr files.FilesRepo) tea.Model {
 
 	detail := viewport.New(1, 1)
 	detail.YPosition = 0
+	detail.MouseWheelEnabled = true
 
 	return TeaModel{
 		mode:       list,
@@ -92,8 +98,10 @@ func (m TeaModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		h, v := BodyStyle.GetFrameSize()
 		m.notesList.SetSize(msg.Width-h, msg.Height-v)
 
-		m.detail.Width = msg.Width - h
-		m.detail.Height = msg.Height - v - lipgloss.Height(TitleStyle.Render("")) - 1
+		headerHeight := lipgloss.Height(TitleStyle.Render(""))
+		m.detail.YPosition = headerHeight + 1
+		m.detail.Width = msg.Width - v
+		m.detail.Height = msg.Height - v*2 - headerHeight - 1
 
 	case abortNoteCreationMsg:
 		m.mode = list
@@ -121,6 +129,7 @@ func (m TeaModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				m.mode = list
 			default:
 				m.detail, cmd = m.detail.Update(msg)
+				cmds = append(cmds, cmd)
 			}
 		case createNoteName:
 			switch {
@@ -136,6 +145,7 @@ func (m TeaModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			case key.Matches(msg, Keymap.Enter):
 				m.mode = detail
 				selected := m.notesList.SelectedItem()
+				m.detailNoteName = selected.FilterValue()
 				content := m.fr.ReadNote(selected.FilterValue())
 				m.detail.SetContent(content)
 			case key.Matches(msg, Keymap.Delete):
@@ -171,10 +181,25 @@ func (m TeaModel) View() string {
 		return BodyStyle.Render(m.newNoteNameInut.View())
 	}
 	if m.mode == detail {
-		formatted := lipgloss.JoinVertical(lipgloss.Left, TitleStyle.Render("Detail"), "\n", m.detail.View())
+		formatted := fmt.Sprintf("%s\n%s", m.noteHeaderView(), m.noteContentView())
 		return BodyStyle.Render(formatted)
 	}
 	return ""
+}
+
+func (m TeaModel) defaultBodyMargin() (h, v int) {
+	h, v = BodyStyle.GetFrameSize()
+	return h, v
+}
+
+func (m TeaModel) noteHeaderView() string {
+	title := TitleStyle.Render(m.detailNoteName)
+	return lipgloss.JoinHorizontal(lipgloss.Center, title)
+}
+
+func (m TeaModel) noteContentView() string {
+	_, v := m.defaultBodyMargin()
+	return NoteContentStyle(m.detail.Width - v*2).Render(m.detail.View())
 }
 
 func (m *TeaModel) getNotesAsItems() []listComponent.Item {
