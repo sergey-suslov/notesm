@@ -27,6 +27,7 @@ const (
 )
 
 type TeaModel struct {
+	allNotes   []listComponent.Item
 	notesList  listComponent.Model
 	mode       mode
 	terminate  bool
@@ -38,6 +39,7 @@ type TeaModel struct {
 	detail         viewport.Model
 	detailNoteName string
 	detailHelp     help.Model
+	keymap         keymap
 
 	fr files.FilesRepo
 }
@@ -54,15 +56,10 @@ func New(fr files.FilesRepo) tea.Model {
 
 	notesList := listComponent.New(items, listComponent.NewDefaultDelegate(), 20, 20)
 
+	keyMap := Keymap
 	notesList.Title = "Notes"
-	notesList.AdditionalShortHelpKeys = func() []key.Binding {
-		return []key.Binding{
-			Keymap.Create,
-			Keymap.Rename,
-			Keymap.Delete,
-			Keymap.Back,
-		}
-	}
+	notesList.AdditionalShortHelpKeys = keyMap.NotesListHelp
+	notesList.SetFilteringEnabled(true)
 
 	newNoteNameInut := textinput.New()
 	newNoteNameInut.Placeholder = "Note name"
@@ -76,12 +73,14 @@ func New(fr files.FilesRepo) tea.Model {
 	return TeaModel{
 		mode:       list,
 		terminate:  false,
+		allNotes:   items,
 		notesList:  notesList,
 		windowSize: tea.WindowSizeMsg{},
 
 		newNoteNameInut: newNoteNameInut,
 
 		detail: detail,
+		keymap: keyMap,
 
 		fr: fr,
 	}
@@ -147,30 +146,36 @@ func (m TeaModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				m.newNoteNameInut, cmd = m.newNoteNameInut.Update(msg)
 			}
 		case list:
-			switch {
-			case key.Matches(msg, Keymap.Enter):
-				m.setDetailContent()
-				m.mode = detail
-			case key.Matches(msg, Keymap.Delete):
-				selected := m.notesList.SelectedItem()
-				m.fr.DeleteNote(selected.FilterValue())
-				cmds = append(cmds, updateNotesListCmd())
-			case key.Matches(msg, Keymap.Edit):
-				m.mode = editNoteBody
-				selected := m.notesList.SelectedItem()
-				noteName := selected.FilterValue()
-				cmds = append(cmds, editNoteOpenEditorCmd(noteName, m.fr.ReadNote(noteName)))
-			case key.Matches(msg, Keymap.Create):
-				m.mode = createNoteName
-				cmds = append(cmds, m.newNoteNameInut.Focus(), textinput.Blink)
-			default:
-				m.notesList, cmd = m.notesList.Update(msg)
-				cmds = append(cmds, cmd)
+			if m.notesList.FilterState() != listComponent.Filtering {
+				switch {
+				case key.Matches(msg, Keymap.Enter):
+					m.setDetailContent()
+					m.mode = detail
+				case key.Matches(msg, Keymap.Delete):
+					selected := m.notesList.SelectedItem()
+					m.fr.DeleteNote(selected.FilterValue())
+					cmds = append(cmds, updateNotesListCmd())
+				case key.Matches(msg, Keymap.Edit):
+					m.mode = editNoteBody
+					selected := m.notesList.SelectedItem()
+					noteName := selected.FilterValue()
+					cmds = append(cmds, editNoteOpenEditorCmd(noteName, m.fr.ReadNote(noteName)))
+				case key.Matches(msg, Keymap.Create):
+					m.mode = createNoteName
+					cmds = append(cmds, m.newNoteNameInut.Focus(), textinput.Blink)
+				}
 			}
+			m.notesList, cmd = m.notesList.Update(msg)
+			cmds = append(cmds, cmd)
 		}
 		switch msg.Type {
 		case tea.KeyCtrlC:
 			return m, tea.Quit
+		}
+	case listComponent.FilterMatchesMsg:
+		if m.mode == list {
+			m.notesList, cmd = m.notesList.Update(msg)
+			cmds = append(cmds, cmd)
 		}
 	}
 

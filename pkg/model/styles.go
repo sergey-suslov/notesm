@@ -61,3 +61,12 @@ var Keymap = keymap{
 		key.WithHelp("ctrl+c/q", "quit"),
 	),
 }
+
+func (k keymap) NotesListHelp() []key.Binding {
+	return []key.Binding{
+		Keymap.Create,
+		Keymap.Rename,
+		Keymap.Delete,
+		Keymap.Back,
+	}
+}
