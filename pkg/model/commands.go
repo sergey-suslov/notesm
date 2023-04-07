@@ -35,7 +35,7 @@ func noteNameCreatedCmd(name string) tea.Cmd {
 }
 
 func editNoteOpenEditorCmd(name string, content string) tea.Cmd {
-	file, err := os.CreateTemp(os.TempDir(), "*.norg")
+	file, err := os.CreateTemp(os.TempDir(), "*.md")
 	if err != nil {
 		panic(err)
 	}
@@ -63,7 +63,7 @@ func editNoteOpenEditorCmd(name string, content string) tea.Cmd {
 }
 
 func newNoteOpenEditorCmd() tea.Cmd {
-	file, err := os.CreateTemp(os.TempDir(), "*.norg")
+	file, err := os.CreateTemp(os.TempDir(), "*.md")
 	if err != nil {
 		panic(err)
 	}
