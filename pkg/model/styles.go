@@ -5,14 +5,18 @@ import (
 	"github.com/charmbracelet/lipgloss"
 )
 
-var BodyStyle = lipgloss.NewStyle().Margin(1, 2)
-var TitleStyle = func() lipgloss.Style {
-	b := lipgloss.NormalBorder()
-	return lipgloss.NewStyle().BorderStyle(b).Padding(0, 1).Margin(0).Bold(true)
-}()
+var (
+	BodyStyle  = lipgloss.NewStyle().Margin(1, 2)
+	TitleStyle = func() lipgloss.Style {
+		b := lipgloss.NormalBorder()
+
+		return lipgloss.NewStyle().BorderStyle(b).Padding(0, 1).Margin(0).Bold(true)
+	}()
+)
 
 var NoteContentStyle = func(width int) lipgloss.Style {
 	b := lipgloss.NormalBorder()
+
 	return lipgloss.NewStyle().Width(width).BorderStyle(b).Padding(0, 0)
 }
 
