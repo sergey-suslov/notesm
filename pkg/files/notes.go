@@ -23,7 +23,7 @@ func New(path string) FilesRepo {
 }
 
 func (fr *FilesRepo) SaveNote(name, body string) error {
-	return os.WriteFile(path.Join(fr.path, name), []byte(body), 0644)
+	return os.WriteFile(path.Join(fr.path, name), []byte(body), 0o644)
 }
 
 func (fr *FilesRepo) ReadNote(name string) string {
@@ -31,6 +31,7 @@ func (fr *FilesRepo) ReadNote(name string) string {
 	if err != nil {
 		panic(err)
 	}
+
 	return string(content)
 }
 
@@ -44,11 +45,12 @@ func (fr *FilesRepo) DeleteNote(name string) {
 func (fr *FilesRepo) CreateDirIfNotExists() error {
 	_, err := ioutil.ReadDir(fr.path)
 	if err != nil {
-		err = os.Mkdir(fr.path, 0644)
+		err = os.Mkdir(fr.path, 0o644)
 		if err != nil {
 			return err
 		}
 	}
+
 	return nil
 }
 
@@ -63,5 +65,6 @@ func (fr *FilesRepo) GetFiles() ([]File, error) {
 			files = append(files, File{Name: v.Name(), ModTime: v.ModTime()})
 		}
 	}
+
 	return files, nil
 }

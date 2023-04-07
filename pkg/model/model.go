@@ -86,12 +86,12 @@ func New(fr files.FilesRepo) tea.Model {
 	}
 }
 
-// Init implements tea.Model
+// Init implements tea.Model.
 func (TeaModel) Init() tea.Cmd {
 	return nil
 }
 
-// Update implements tea.Model
+// Update implements tea.Model.
 func (m TeaModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	var cmd tea.Cmd
 	var cmds []tea.Cmd
@@ -118,7 +118,7 @@ func (m TeaModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		cmds = append(cmds, m.notesList.SetItems(m.getNotesAsItems()))
 	case editNoteBodyResultMsg:
 		m.mode = list
-		m.fr.SaveNote(msg.name, msg.content)
+		_ = m.fr.SaveNote(msg.name, msg.content)
 	case newNoteBodyResultMsg:
 		err := m.createNote(m.newNoteName, string(msg))
 		if err != nil {
@@ -127,7 +127,7 @@ func (m TeaModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.mode = list
 		cmds = append(cmds, updateNotesListCmd())
 	case tea.KeyMsg:
-		switch m.mode {
+		switch m.mode { //nolint:exhaustive
 		case detail:
 			switch {
 			case key.Matches(msg, Keymap.BackWithQ):
@@ -143,7 +143,7 @@ func (m TeaModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			case key.Matches(msg, Keymap.Enter):
 				cmds = append(cmds, noteNameCreatedCmd(m.newNoteNameInut.Value()))
 			default:
-				m.newNoteNameInut, cmd = m.newNoteNameInut.Update(msg)
+				m.newNoteNameInut, cmd = m.newNoteNameInut.Update(msg) //nolint:ineffassign
 			}
 		case list:
 			if m.notesList.FilterState() != listComponent.Filtering {
@@ -168,7 +168,7 @@ func (m TeaModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.notesList, cmd = m.notesList.Update(msg)
 			cmds = append(cmds, cmd)
 		}
-		switch msg.Type {
+		switch msg.Type { //nolint:exhaustive
 		case tea.KeyCtrlC:
 			return m, tea.Quit
 		}
@@ -182,7 +182,7 @@ func (m TeaModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	return m, tea.Batch(cmds...)
 }
 
-// View implements tea.Model
+// View implements tea.Model.
 func (m TeaModel) View() string {
 	if m.terminate {
 		return ""
@@ -195,18 +195,20 @@ func (m TeaModel) View() string {
 	}
 	if m.mode == detail {
 		formatted := fmt.Sprintf("%s\n%s", m.noteHeaderView(), m.noteContentView())
+
 		return BodyStyle.Render(formatted)
 	}
+
 	return ""
 }
 
-func (m TeaModel) defaultBodyMargin() (h, v int) {
-	h, v = BodyStyle.GetFrameSize()
-	return h, v
+func (m TeaModel) defaultBodyMargin() (int, int) { //nolint:exhaustive
+	return BodyStyle.GetFrameSize()
 }
 
 func (m TeaModel) noteHeaderView() string {
 	title := TitleStyle.Render(m.detailNoteName)
+
 	return lipgloss.JoinHorizontal(lipgloss.Center, title)
 }
 
@@ -242,5 +244,6 @@ func (m *TeaModel) getNotesAsItems() []listComponent.Item {
 	for i, f := range files {
 		items[i] = listComponent.Item(Note{f.Name, f.ModTime})
 	}
+
 	return items
 }

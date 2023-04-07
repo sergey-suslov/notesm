@@ -14,7 +14,7 @@ func main() {
 	homeDir := os.Getenv("HOME")
 	filesRepoPath := path.Join(homeDir, files.DEFAULT_FILES_DIR)
 	filesRepo := files.New(filesRepoPath)
-	filesRepo.CreateDirIfNotExists()
+	_ = filesRepo.CreateDirIfNotExists()
 
 	p := tea.NewProgram(model.New(filesRepo), tea.WithAltScreen(), tea.WithMouseCellMotion())
 	if err := p.Start(); err != nil {
